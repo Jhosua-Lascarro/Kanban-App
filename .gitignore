@@ -32,3 +32,6 @@ Thumbs.db
 # cache
 .cache/
 .eslintcache
+
+# vite
+.vite
