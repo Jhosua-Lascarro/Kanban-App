@@ -1,0 +1,43 @@
+name: Format on PR to main
+
+on:
+    pull_request:
+        branches: [main]
+
+permissions:
+    contents: write
+
+jobs:
+    format:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout PR branch
+              uses: actions/checkout@v4
+              with:
+                  ref: ${{ github.head_ref }}
+
+            - name: Setup Bun
+              uses: oven-sh/setup-bun@v2
+
+            - name: Install dependencies
+              run: bun install --frozen-lockfile
+
+            - name: Run formatter
+              run: bun run format
+
+            - name: Commit formatting changes
+              if: github.event.pull_request.head.repo.full_name == github.repository
+              uses: stefanzweifel/git-auto-commit-action@v5
+              with:
+                  commit_message: "chore: apply Biome formatting"
+                  branch: ${{ github.head_ref }}
+
+            - name: Check formatting diff (fork PRs)
+              if: github.event.pull_request.head.repo.full_name != github.repository
+              run: |
+                  if [ -n "$(git status --porcelain)" ]; then
+                    echo "Formatting changes are required. Please run 'bun run format' and push again."
+                    git diff
+                    exit 1
+                  fi
